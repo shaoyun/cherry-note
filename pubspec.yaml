@@ -1,0 +1,81 @@
+name: cherry_note
+description: A cross-platform notes app with S3 storage integration
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  bloc: ^8.1.2
+  
+  # HTTP Client
+  dio: ^5.3.2
+  
+  # Local Storage
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  
+  # File Operations
+  file_picker: ^6.1.1
+  path: ^1.8.3
+  
+  # Markdown Support
+  flutter_markdown: ^0.6.18
+  markdown: ^7.1.1
+  
+  # Dependency Injection
+  get_it: ^7.6.4
+  injectable: ^2.3.2
+  
+  # Routing
+  go_router: ^12.1.1
+  
+  # UI Components
+  cupertino_icons: ^1.0.2
+  
+  # AWS S3 Integration
+  aws_s3_api: ^2.0.0
+  
+  # Utilities
+  equatable: ^2.0.5
+  json_annotation: ^4.8.1
+  uuid: ^4.1.0
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  
+  # Code Generation
+  build_runner: ^2.4.7
+  injectable_generator: ^2.4.1
+  json_serializable: ^6.7.1
+  
+  # Testing
+  bloc_test: ^9.1.4
+  mockito: ^5.4.2
+  sqflite_common_ffi: ^2.3.0
+
+flutter:
+  uses-material-design: true
+  
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+  
+  # Fonts (using system fonts for now)
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: fonts/Roboto-Regular.ttf
+  #       - asset: fonts/Roboto-Bold.ttf
+  #         weight: 700
