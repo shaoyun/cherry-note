@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FF6B6B" stroke="#E55555" stroke-width="8"/>
+  
+  <!-- Note paper -->
+  <rect x="140" y="120" width="232" height="280" rx="12" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="2"/>
+  
+  <!-- Note lines -->
+  <line x1="160" y1="180" x2="352" y2="180" stroke="#E0E0E0" stroke-width="2"/>
+  <line x1="160" y1="220" x2="352" y2="220" stroke="#E0E0E0" stroke-width="2"/>
+  <line x1="160" y1="260" x2="320" y2="260" stroke="#E0E0E0" stroke-width="2"/>
+  <line x1="160" y1="300" x2="340" y2="300" stroke="#E0E0E0" stroke-width="2"/>
+  
+  <!-- Pen/pencil -->
+  <path d="M320 140 L380 80 L400 100 L340 160 Z" fill="#4ECDC4" stroke="#45B7B8" stroke-width="2"/>
+  <path d="M320 140 L340 160 L330 170 L310 150 Z" fill="#96CEB4"/>
+  
+  <!-- Cherry (brand element) -->
+  <circle cx="180" cy="160" r="12" fill="#FF6B6B"/>
+  <circle cx="200" cy="150" r="12" fill="#FF6B6B"/>
+  <path d="M185 148 Q190 140 195 145" stroke="#4ECDC4" stroke-width="3" fill="none"/>
+</svg>

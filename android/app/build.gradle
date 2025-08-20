@@ -22,6 +22,12 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "space.todo8.cherry_note"
     compileSdk flutter.compileSdkVersion
@@ -40,17 +46,60 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
     defaultConfig {
         applicationId "space.todo8.cherry_note"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        
+        // Enable multidex for large apps
+        multiDexEnabled true
+        
+        // Proguard optimization
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+        }
+        
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
+            
+            // Enable R8 full mode
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    flavorDimensions "default"
+    productFlavors {
+        production {
+            dimension "default"
+            applicationIdSuffix ""
+            versionNameSuffix ""
+        }
+        
+        staging {
+            dimension "default"
+            applicationIdSuffix ".staging"
+            versionNameSuffix "-staging"
         }
     }
 }

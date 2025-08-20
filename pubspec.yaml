@@ -65,6 +65,9 @@ dev_dependencies:
   bloc_test: ^9.1.4
   mockito: ^5.4.2
   sqflite_common_ffi: ^2.3.0
+  
+  # App Icon Generation
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true

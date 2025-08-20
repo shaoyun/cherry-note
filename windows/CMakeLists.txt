@@ -4,7 +4,13 @@ project(cherry_note LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "cherry_note")
+set(BINARY_NAME "CherryNote")
+
+# Application metadata
+set(APP_VERSION "1.0.0")
+set(APP_COMPANY "Todo8 Space")
+set(APP_DESCRIPTION "Cross-platform notes app with S3 storage integration")
+set(APP_COPYRIGHT "Copyright © 2024 Todo8 Space")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

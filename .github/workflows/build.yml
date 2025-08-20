@@ -1,0 +1,168 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Generate code
+        run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+      - name: Run tests
+        run: flutter test --coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage/lcov.info
+
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Generate code
+        run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+      - name: Build APK
+        run: flutter build apk --release --flavor production
+      
+      - name: Build App Bundle
+        run: flutter build appbundle --release --flavor production
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-production-release.apk
+      
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-aab
+          path: build/app/outputs/bundle/productionRelease/app-production-release.aab
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Generate code
+        run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+      - name: Build Windows
+        run: flutter build windows --release
+      
+      - name: Create Windows archive
+        run: |
+          Compress-Archive -Path "build\windows\runner\Release\*" -DestinationPath "CherryNote-Windows.zip"
+      
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-app
+          path: CherryNote-Windows.zip
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Generate code
+        run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+      - name: Build macOS
+        run: flutter build macos --release
+      
+      - name: Create macOS archive
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../CherryNote-macOS.zip "Cherry Note.app"
+      
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-app
+          path: CherryNote-macOS.zip
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-android, build-windows, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            android-apk/app-production-release.apk
+            android-aab/app-production-release.aab
+            windows-app/CherryNote-Windows.zip
+            macos-app/CherryNote-macOS.zip
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
