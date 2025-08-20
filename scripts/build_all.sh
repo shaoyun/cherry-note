@@ -94,6 +94,21 @@ else
     print_warning "Not on macOS. Skipping macOS build."
 fi
 
+# Build Web (always available)
+print_header "Building for Web..."
+./scripts/build_web.sh $BUILD_TYPE
+
+# Copy web output to releases directory
+if [ -d "build/web" ]; then
+    mkdir -p "build/releases/CherryNote-Web"
+    cp -r build/web/* "build/releases/CherryNote-Web/"
+    
+    # Create ZIP archive for web deployment
+    cd build/releases
+    zip -r "CherryNote-v1.0.0-web.zip" "CherryNote-Web/"
+    cd ../..
+fi
+
 print_status "✅ Multi-platform build completed!"
 
 # Show all build outputs
@@ -103,6 +118,15 @@ find build/releases -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.zip" -
     size=$(du -h "$file" | cut -f1)
     echo "  $(basename "$file"): $size"
 done
+
+# Show web deployment info
+if [ -d "build/releases/CherryNote-Web" ]; then
+    echo ""
+    echo "🌐 Web deployment ready:"
+    echo "  Directory: build/releases/CherryNote-Web/"
+    echo "  Archive: CherryNote-v1.0.0-web.zip"
+    echo "  Test locally: cd build/releases/CherryNote-Web && python3 -m http.server 8000"
+fi
 
 echo ""
 print_status "🎉 Cherry Note is ready for distribution!"

@@ -153,7 +153,7 @@ class AboutPage extends StatelessWidget {
         description: '文件夹树、笔记列表、编辑预览区域',
       ),
       _FeatureItem(
-        icon: Icons.markdown,
+        icon: Icons.text_fields,
         title: 'Markdown支持',
         description: '实时编辑和预览，语法高亮',
       ),

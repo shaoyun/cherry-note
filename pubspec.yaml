@@ -28,6 +28,9 @@ dependencies:
   path: ^1.8.3
   archive: ^3.4.10
   
+  # Web-specific dependencies
+  universal_html: ^2.2.4
+  
   # Markdown Support
   flutter_markdown: ^0.6.18
   markdown: ^7.1.1
