@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/error/global_error_handler.dart';
+import '../../core/error/error_display_widgets.dart';
 
 class AppErrorWidget extends StatelessWidget {
   final String message;
@@ -132,5 +134,80 @@ class EmptyStateWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Enhanced error widget that integrates with global error handling
+class EnhancedErrorWidget extends StatelessWidget {
+  final AppError error;
+  final VoidCallback? onRetry;
+  final bool showTechnicalDetails;
+
+  const EnhancedErrorWidget({
+    super.key,
+    required this.error,
+    this.onRetry,
+    this.showTechnicalDetails = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: ErrorDisplayWidget(
+          error: error,
+          onRetry: onRetry,
+          showTechnicalDetails: showTechnicalDetails,
+        ),
+      ),
+    );
+  }
+}
+
+/// Error boundary widget that catches and displays errors
+class ErrorBoundary extends StatefulWidget {
+  final Widget child;
+  final Widget Function(AppError error, VoidCallback retry)? errorBuilder;
+
+  const ErrorBoundary({
+    super.key,
+    required this.child,
+    this.errorBuilder,
+  });
+
+  @override
+  State<ErrorBoundary> createState() => _ErrorBoundaryState();
+}
+
+class _ErrorBoundaryState extends State<ErrorBoundary> {
+  AppError? _error;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      if (widget.errorBuilder != null) {
+        return widget.errorBuilder!(_error!, _retry);
+      }
+      return EnhancedErrorWidget(
+        error: _error!,
+        onRetry: _retry,
+        showTechnicalDetails: true,
+      );
+    }
+
+    return widget.child;
+  }
+
+  void _retry() {
+    setState(() {
+      _error = null;
+    });
+  }
+
+  void _handleError(AppError error) {
+    setState(() {
+      _error = error;
+    });
   }
 }
