@@ -234,6 +234,34 @@ class ImportNoteEvent extends NotesEvent {
   List<Object?> get props => [importPath, targetFolderPath, format];
 }
 
+/// 创建便签事件
+class CreateStickyNoteEvent extends NotesEvent {
+  final String? content;
+  final List<String>? tags;
+
+  const CreateStickyNoteEvent({
+    this.content,
+    this.tags,
+  });
+
+  @override
+  List<Object?> get props => [content, tags];
+}
+
+/// 加载便签列表事件
+class LoadStickyNotesEvent extends NotesEvent {
+  final NotesSortBy sortBy;
+  final bool ascending;
+
+  const LoadStickyNotesEvent({
+    this.sortBy = NotesSortBy.createdDate,
+    this.ascending = false,
+  });
+
+  @override
+  List<Object?> get props => [sortBy, ascending];
+}
+
 /// 笔记排序方式
 enum NotesSortBy {
   title,

@@ -285,6 +285,21 @@ class ResponsiveSidebar extends StatelessWidget {
   }
 }
 
+/// Responsive layout builder with constraints
+class ResponsiveLayoutBuilder extends StatelessWidget {
+  final Widget Function(BuildContext context, BoxConstraints constraints) builder;
+  
+  const ResponsiveLayoutBuilder({
+    super.key,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: builder);
+  }
+}
+
 /// Extension for getting screen size from context
 extension ScreenSizeExtension on BuildContext {
   ScreenSize get screenSize {

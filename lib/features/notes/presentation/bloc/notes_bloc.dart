@@ -44,6 +44,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     on<DeleteMultipleNotesEvent>(_onDeleteMultipleNotes);
     on<ExportNoteEvent>(_onExportNote);
     on<ImportNoteEvent>(_onImportNote);
+    on<CreateStickyNoteEvent>(_onCreateStickyNote);
+    on<LoadStickyNotesEvent>(_onLoadStickyNotes);
   }
 
   /// 加载笔记列表
@@ -897,5 +899,144 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     await _writeNoteFile(fullPath, noteFile);
 
     return [noteFile];
+  }
+
+  /// 创建便签
+  Future<void> _onCreateStickyNote(CreateStickyNoteEvent event, Emitter<NotesState> emit) async {
+    try {
+      emit(const NoteOperationInProgress(operation: 'create_sticky'));
+
+      // 生成便签标题和文件名
+      final now = DateTime.now();
+      final title = _generateStickyNoteTitle(now, event.content);
+      final fileName = _generateStickyNoteFileName(now);
+      
+      // 便签保存到 "便签" 文件夹
+      const stickyFolderPath = '便签';
+      final fullPath = path.join(_notesDirectory, stickyFolderPath, fileName);
+
+      // 确保便签目录存在
+      final directory = Directory(path.dirname(fullPath));
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      // 创建便签文件
+      final stickyNote = NoteFile(
+        filePath: PathUtils.toRelativePath(fullPath, _notesDirectory),
+        title: title,
+        content: event.content ?? '',
+        tags: event.tags ?? [],
+        created: now,
+        updated: now,
+        isSticky: true, // 标记为便签
+      );
+
+      // 写入文件
+      await _writeNoteFile(fullPath, stickyNote);
+
+      // 更新缓存
+      _allNotes.add(stickyNote);
+
+      // 重新应用过滤和排序
+      final filteredNotes = _applyFiltersAndSort();
+
+      emit(NoteOperationSuccess(
+        operation: 'create_sticky',
+        message: 'Sticky note created successfully',
+        filePath: stickyNote.filePath,
+        note: stickyNote,
+      ));
+
+      // 立即更新列表状态
+      emit(NotesLoaded(
+        notes: filteredNotes,
+        currentFolderPath: _currentFolderPath,
+        searchQuery: _currentSearchQuery,
+        filterTags: _currentFilterTags,
+        sortBy: _currentSortBy,
+        ascending: _currentAscending,
+        selectedNoteId: stickyNote.filePath,
+        totalCount: filteredNotes.length,
+      ));
+    } catch (e) {
+      emit(NoteOperationError(
+        operation: 'create_sticky',
+        message: 'Failed to create sticky note: ${e.toString()}',
+        error: e,
+      ));
+    }
+  }
+
+  /// 加载便签列表
+  Future<void> _onLoadStickyNotes(LoadStickyNotesEvent event, Emitter<NotesState> emit) async {
+    try {
+      emit(const NotesLoading());
+
+      // 加载所有笔记
+      await _loadAllNotes();
+
+      // 过滤出便签
+      final stickyNotes = _allNotes.where((note) => note.isSticky).toList();
+
+      // 排序便签
+      stickyNotes.sort((a, b) {
+        int comparison = 0;
+        
+        switch (event.sortBy) {
+          case NotesSortBy.title:
+            comparison = a.title.compareTo(b.title);
+            break;
+          case NotesSortBy.createdDate:
+            comparison = a.created.compareTo(b.created);
+            break;
+          case NotesSortBy.modifiedDate:
+            comparison = a.updated.compareTo(b.updated);
+            break;
+          case NotesSortBy.size:
+            comparison = a.content.length.compareTo(b.content.length);
+            break;
+          case NotesSortBy.tags:
+            comparison = a.tags.join(',').compareTo(b.tags.join(','));
+            break;
+        }
+
+        return event.ascending ? comparison : -comparison;
+      });
+
+      emit(NotesLoaded(
+        notes: stickyNotes,
+        currentFolderPath: '便签',
+        sortBy: event.sortBy,
+        ascending: event.ascending,
+        totalCount: stickyNotes.length,
+      ));
+    } catch (e) {
+      emit(NotesError(
+        message: 'Failed to load sticky notes: ${e.toString()}',
+        error: e,
+      ));
+    }
+  }
+
+  /// 生成便签标题
+  String _generateStickyNoteTitle(DateTime dateTime, String? content) {
+    // 如果有内容，使用内容的前几个字符作为标题
+    if (content != null && content.trim().isNotEmpty) {
+      final firstLine = content.trim().split('\n').first;
+      if (firstLine.length <= 30) {
+        return firstLine;
+      } else {
+        return '${firstLine.substring(0, 30)}...';
+      }
+    }
+    
+    // 否则使用日期时间作为标题
+    return '便签 ${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// 生成便签文件名
+  String _generateStickyNoteFileName(DateTime dateTime) {
+    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}-${dateTime.hour.toString().padLeft(2, '0')}${dateTime.minute.toString().padLeft(2, '0')}${dateTime.second.toString().padLeft(2, '0')}-${dateTime.millisecond.toString().padLeft(3, '0')}-便签.md';
   }
 }

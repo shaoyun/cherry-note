@@ -144,7 +144,7 @@ This is a test note content.
 
       setUp(() async {
         // 先创建一个测试笔记
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Original Title',
           content: 'Original content',
           tags: ['original'],
@@ -210,7 +210,7 @@ This is a test note content.
 
       setUp(() async {
         // 先创建一个测试笔记
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Note to Delete',
           content: 'This note will be deleted',
         ));
@@ -253,19 +253,19 @@ This is a test note content.
     group('SearchNotesEvent', () {
       setUp(() async {
         // 创建多个测试笔记
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Flutter Development',
           content: 'Learning Flutter framework',
           tags: ['flutter', 'development'],
         ));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Dart Programming',
           content: 'Dart language basics',
           tags: ['dart', 'programming'],
         ));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Mobile Apps',
           content: 'Building mobile applications with Flutter',
           tags: ['mobile', 'flutter'],
@@ -329,21 +329,21 @@ This is a test note content.
     group('SortNotesEvent', () {
       setUp(() async {
         // 创建多个测试笔记，时间间隔确保排序差异
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'B Note',
           content: 'Short',
         ));
         
         await Future.delayed(const Duration(milliseconds: 10));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'A Note',
           content: 'This is a longer content for testing',
         ));
         
         await Future.delayed(const Duration(milliseconds: 10));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'C Note',
           content: 'Medium length content',
         ));
@@ -396,17 +396,17 @@ This is a test note content.
     group('FilterNotesByTagsEvent', () {
       setUp(() async {
         // 创建带不同标签的测试笔记
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Flutter Note',
           tags: ['flutter', 'mobile'],
         ));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Dart Note',
           tags: ['dart', 'programming'],
         ));
         
-        await notesBloc.add(const CreateNoteEvent(
+        notesBloc.add(const CreateNoteEvent(
           title: 'Mobile Note',
           tags: ['mobile', 'development'],
         ));
@@ -446,9 +446,9 @@ This is a test note content.
     group('ClearSearchEvent', () {
       setUp(() async {
         // 创建测试笔记并应用搜索
-        await notesBloc.add(const CreateNoteEvent(title: 'Test Note'));
+        notesBloc.add(const CreateNoteEvent(title: 'Test Note'));
         await Future.delayed(const Duration(milliseconds: 50));
-        await notesBloc.add(const SearchNotesEvent(query: 'Test'));
+        notesBloc.add(const SearchNotesEvent(query: 'Test'));
         await Future.delayed(const Duration(milliseconds: 50));
       });
 
@@ -470,7 +470,7 @@ This is a test note content.
       late String testNoteFilePath;
 
       setUp(() async {
-        await notesBloc.add(const CreateNoteEvent(title: 'Selectable Note'));
+        notesBloc.add(const CreateNoteEvent(title: 'Selectable Note'));
         await Future.delayed(const Duration(milliseconds: 50));
         
         final state = notesBloc.state;
@@ -504,6 +504,161 @@ This is a test note content.
           isA<NotesLoaded>()
               .having((state) => state.selectedNoteId, 'selected note', isNull)
               .having((state) => state.hasSelection, 'has selection', isFalse),
+        ],
+      );
+    });
+
+    group('CreateStickyNoteEvent', () {
+      blocTest<NotesBloc, NotesState>(
+        '应该创建便签',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const CreateStickyNoteEvent(
+          content: '这是一个测试便签',
+          tags: ['测试', '便签'],
+        )),
+        expect: () => [
+          const NoteOperationInProgress(operation: 'create_sticky'),
+          isA<NoteOperationSuccess>()
+              .having((state) => state.operation, 'operation', equals('create_sticky'))
+              .having((state) => state.note?.isSticky, 'is sticky', isTrue)
+              .having((state) => state.note?.content, 'content', equals('这是一个测试便签'))
+              .having((state) => state.note?.tags, 'tags', equals(['测试', '便签'])),
+          isA<NotesLoaded>().having(
+            (state) => state.notes.length,
+            'notes count',
+            equals(1),
+          ).having(
+            (state) => state.notes.first.isSticky,
+            'first note is sticky',
+            isTrue,
+          ),
+        ],
+        verify: (bloc) async {
+          // 验证便签文件是否在便签文件夹中创建
+          final stickyDir = Directory(path.join(notesDirectory, '便签'));
+          expect(await stickyDir.exists(), isTrue);
+          
+          final files = await stickyDir
+              .list()
+              .where((entity) => entity is File && entity.path.endsWith('.md'))
+              .toList();
+          expect(files.length, equals(1));
+        },
+      );
+
+      blocTest<NotesBloc, NotesState>(
+        '应该创建没有内容的便签',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const CreateStickyNoteEvent()),
+        expect: () => [
+          const NoteOperationInProgress(operation: 'create_sticky'),
+          isA<NoteOperationSuccess>()
+              .having((state) => state.operation, 'operation', equals('create_sticky'))
+              .having((state) => state.note?.isSticky, 'is sticky', isTrue)
+              .having((state) => state.note?.content, 'content', isEmpty)
+              .having((state) => state.note?.title, 'title', contains('便签')),
+          isA<NotesLoaded>(),
+        ],
+      );
+
+      blocTest<NotesBloc, NotesState>(
+        '应该为长内容的便签生成截断标题',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const CreateStickyNoteEvent(
+          content: '这是一个非常长的便签内容，超过了30个字符的限制，应该被截断并添加省略号来作为标题',
+        )),
+        expect: () => [
+          const NoteOperationInProgress(operation: 'create_sticky'),
+          isA<NoteOperationSuccess>()
+              .having((state) => state.note?.title.length, 'title length', lessThanOrEqualTo(33))
+              .having((state) => state.note?.title, 'title', endsWith('...')),
+          isA<NotesLoaded>(),
+        ],
+      );
+    });
+
+    group('LoadStickyNotesEvent', () {
+      setUp(() async {
+        // 创建一些便签和普通笔记
+        notesBloc.add(const CreateStickyNoteEvent(
+          content: '第一个便签',
+          tags: ['便签1'],
+        ));
+        
+        await Future.delayed(const Duration(milliseconds: 10));
+        
+        notesBloc.add(const CreateNoteEvent(
+          title: '普通笔记',
+          content: '这是一个普通笔记',
+        ));
+        
+        await Future.delayed(const Duration(milliseconds: 10));
+        
+        notesBloc.add(const CreateStickyNoteEvent(
+          content: '第二个便签',
+          tags: ['便签2'],
+        ));
+        
+        // 等待创建完成
+        await Future.delayed(const Duration(milliseconds: 100));
+      });
+
+      blocTest<NotesBloc, NotesState>(
+        '应该只加载便签',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const LoadStickyNotesEvent()),
+        skip: 6, // 跳过创建笔记的状态
+        expect: () => [
+          const NotesLoading(),
+          isA<NotesLoaded>()
+              .having((state) => state.notes.length, 'sticky notes count', equals(2))
+              .having((state) => state.currentFolderPath, 'folder path', equals('便签'))
+              .having(
+                (state) => state.notes.every((note) => note.isSticky),
+                'all notes are sticky',
+                isTrue,
+              ),
+        ],
+      );
+
+      blocTest<NotesBloc, NotesState>(
+        '应该按创建时间倒序排序便签',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const LoadStickyNotesEvent(
+          sortBy: NotesSortBy.createdDate,
+          ascending: false,
+        )),
+        skip: 6, // 跳过创建笔记的状态
+        expect: () => [
+          const NotesLoading(),
+          isA<NotesLoaded>()
+              .having((state) => state.notes.length, 'count', equals(2))
+              .having(
+                (state) => state.notes.first.content,
+                'first note content',
+                equals('第二个便签'),
+              )
+              .having(
+                (state) => state.notes.last.content,
+                'last note content',
+                equals('第一个便签'),
+              ),
+        ],
+      );
+
+      blocTest<NotesBloc, NotesState>(
+        '应该按标题升序排序便签',
+        build: () => notesBloc,
+        act: (bloc) => bloc.add(const LoadStickyNotesEvent(
+          sortBy: NotesSortBy.title,
+          ascending: true,
+        )),
+        skip: 6, // 跳过创建笔记的状态
+        expect: () => [
+          const NotesLoading(),
+          isA<NotesLoaded>()
+              .having((state) => state.sortBy, 'sort by', equals(NotesSortBy.title))
+              .having((state) => state.ascending, 'ascending', isTrue),
         ],
       );
     });
