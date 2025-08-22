@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:cherry_note/features/notes/presentation/bloc/notes_bloc.dart';
+import 'package:cherry_note/features/notes/presentation/bloc/web_notes_bloc.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_event.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_state.dart';
 import 'package:cherry_note/features/notes/presentation/widgets/sticky_note_widget.dart';
 import 'package:cherry_note/features/notes/domain/entities/note_file.dart';
 import 'package:cherry_note/shared/widgets/loading_widget.dart';
-import 'package:cherry_note/shared/widgets/error_widget.dart';
+import 'package:cherry_note/shared/widgets/error_widget.dart' as CustomErrorWidget;
 
 /// 便签页面
 class StickyNotesPage extends StatefulWidget {
@@ -25,7 +27,11 @@ class _StickyNotesPageState extends State<StickyNotesPage> {
   }
 
   void _loadStickyNotes() {
-    context.read<NotesBloc>().add(const LoadStickyNotesEvent());
+    if (kIsWeb) {
+      context.read<WebNotesBloc>().add(const LoadStickyNotesEvent());
+    } else {
+      context.read<NotesBloc>().add(const LoadStickyNotesEvent());
+    }
   }
 
   @override
@@ -60,35 +66,13 @@ class _StickyNotesPageState extends State<StickyNotesPage> {
           
           // 便签列表
           Expanded(
-            child: BlocBuilder<NotesBloc, NotesState>(
-              builder: (context, state) {
-                if (state is NotesLoading) {
-                  return const LoadingWidget(message: '加载便签中...');
-                }
-                
-                if (state is NotesError) {
-                  return CustomErrorWidget(
-                    message: state.message,
-                    onRetry: _loadStickyNotes,
-                  );
-                }
-                
-                if (state is NotesLoaded) {
-                  final stickyNotes = state.notes.where((note) => note.isSticky).toList();
-                  
-                  if (stickyNotes.isEmpty) {
-                    return const _EmptyStickyNotesWidget();
-                  }
-                  
-                  return _StickyNotesList(
-                    stickyNotes: stickyNotes,
-                    onRefresh: _loadStickyNotes,
-                  );
-                }
-                
-                return const _EmptyStickyNotesWidget();
-              },
-            ),
+            child: kIsWeb
+                ? BlocBuilder<WebNotesBloc, NotesState>(
+                    builder: (context, state) => _buildStickyNotesList(context, state),
+                  )
+                : BlocBuilder<NotesBloc, NotesState>(
+                    builder: (context, state) => _buildStickyNotesList(context, state),
+                  ),
           ),
         ],
       ),
@@ -96,6 +80,34 @@ class _StickyNotesPageState extends State<StickyNotesPage> {
         onPressed: () => _showCreateStickyNoteDialog(context),
       ),
     );
+  }
+
+  Widget _buildStickyNotesList(BuildContext context, NotesState state) {
+    if (state is NotesLoading) {
+      return const LoadingWidget(message: '加载便签中...');
+    }
+    
+    if (state is NotesError) {
+      return CustomErrorWidget.CustomErrorWidget(
+        message: state.message,
+        onRetry: _loadStickyNotes,
+      );
+    }
+    
+    if (state is NotesLoaded) {
+      final stickyNotes = state.notes.where((note) => note.isSticky).toList();
+      
+      if (stickyNotes.isEmpty) {
+        return const _EmptyStickyNotesWidget();
+      }
+      
+      return _StickyNotesList(
+        stickyNotes: stickyNotes,
+        onRefresh: _loadStickyNotes,
+      );
+    }
+    
+    return const _EmptyStickyNotesWidget();
   }
 
   void _showCreateStickyNoteDialog(BuildContext context) {
@@ -189,9 +201,15 @@ class _StickyNotesList extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              context.read<NotesBloc>().add(
-                DeleteNoteEvent(filePath: stickyNote.filePath),
-              );
+              if (kIsWeb) {
+                context.read<WebNotesBloc>().add(
+                  DeleteNoteEvent(filePath: stickyNote.filePath),
+                );
+              } else {
+                context.read<NotesBloc>().add(
+                  DeleteNoteEvent(filePath: stickyNote.filePath),
+                );
+              }
               Navigator.of(context).pop();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),

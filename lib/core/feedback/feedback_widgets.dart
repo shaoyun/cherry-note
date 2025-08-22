@@ -407,6 +407,7 @@ class _FeedbackListenerState extends State<FeedbackListener> {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      alignment: Alignment.topCenter,
       children: [
         widget.child,
         if (_currentLoadingMessage != null || _activeMessages.isNotEmpty)

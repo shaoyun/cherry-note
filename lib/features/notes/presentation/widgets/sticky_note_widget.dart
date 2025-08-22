@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:cherry_note/features/notes/presentation/bloc/notes_bloc.dart';
+import 'package:cherry_note/features/notes/presentation/bloc/web_notes_bloc.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_event.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_state.dart';
-import 'package:cherry_note/features/tags/presentation/widgets/tag_input_widget.dart';
-import 'package:cherry_note/shared/widgets/custom_button.dart';
-import 'package:cherry_note/shared/widgets/custom_input.dart';
 
 /// 便签创建和管理组件
 class StickyNoteWidget extends StatefulWidget {
@@ -37,109 +36,110 @@ class _StickyNoteWidgetState extends State<StickyNoteWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<NotesBloc, NotesState>(
-      listener: (context, state) {
-        if (state is NoteOperationSuccess && state.operation == 'create_sticky') {
-          setState(() {
-            _isCreating = false;
-          });
-          _clearForm();
-          widget.onStickyNoteCreated?.call();
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('便签创建成功'),
-              backgroundColor: Colors.green,
-            ),
+    return kIsWeb
+        ? BlocListener<WebNotesBloc, NotesState>(
+            listener: _handleBlocState,
+            child: _buildContent(context),
+          )
+        : BlocListener<NotesBloc, NotesState>(
+            listener: _handleBlocState,
+            child: _buildContent(context),
           );
-        } else if (state is NoteOperationError && state.operation == 'create_sticky') {
-          setState(() {
-            _isCreating = false;
-          });
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('便签创建失败: ${state.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        } else if (state is NoteOperationInProgress && state.operation == 'create_sticky') {
-          setState(() {
-            _isCreating = true;
-          });
-        }
-      },
-      child: Card(
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.sticky_note_2,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '快速便签',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // 内容输入框
-                CustomInput(
-                  controller: _contentController,
-                  label: '便签内容',
-                  hint: '记录你的想法、待办事项...',
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '请输入便签内容';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // 标签输入
-                TagInputWidget(
-                  initialTags: _tags,
-                  onTagsChanged: (tags) {
-                    setState(() {
-                      _tags = tags;
-                    });
-                  },
-                  placeholder: '添加标签...',
-                ),
-                const SizedBox(height: 16),
-                
-                // 创建按钮
-                if (widget.showCreateButton)
-                  CustomButton(
-                    onPressed: _isCreating ? null : _createStickyNote,
-                    text: _isCreating ? '创建中...' : '创建便签',
-                    icon: _isCreating 
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add, size: 18),
-                    variant: ButtonVariant.primary,
+  }
+
+  void _handleBlocState(BuildContext context, NotesState state) {
+    if (state is NoteOperationSuccess && state.operation == 'create_sticky') {
+      setState(() {
+        _isCreating = false;
+      });
+      _clearForm();
+      widget.onStickyNoteCreated?.call();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('便签创建成功'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else if (state is NoteOperationError && state.operation == 'create_sticky') {
+      setState(() {
+        _isCreating = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('便签创建失败: ${state.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (state is NoteOperationInProgress && state.operation == 'create_sticky') {
+      setState(() {
+        _isCreating = true;
+      });
+    }
+  }
+
+  Widget _buildContent(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.sticky_note_2,
+                    color: Colors.amber,
+                    size: 20,
                   ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '快速便签',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // 内容输入框
+              TextFormField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  labelText: '便签内容',
+                  hintText: '记录你的想法、待办事项...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return '请输入便签内容';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // 创建按钮
+              if (widget.showCreateButton)
+                ElevatedButton.icon(
+                  onPressed: _isCreating ? null : _createStickyNote,
+                  icon: _isCreating 
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add, size: 18),
+                  label: Text(_isCreating ? '创建中...' : '创建便签'),
+                ),
+            ],
           ),
         ),
       ),
@@ -153,12 +153,21 @@ class _StickyNoteWidgetState extends State<StickyNoteWidget> {
 
     final content = _contentController.text.trim();
     
-    context.read<NotesBloc>().add(
-      CreateStickyNoteEvent(
-        content: content,
-        tags: _tags.isNotEmpty ? _tags : null,
-      ),
-    );
+    if (kIsWeb) {
+      context.read<WebNotesBloc>().add(
+        CreateStickyNoteEvent(
+          content: content,
+          tags: _tags.isNotEmpty ? _tags : null,
+        ),
+      );
+    } else {
+      context.read<NotesBloc>().add(
+        CreateStickyNoteEvent(
+          content: content,
+          tags: _tags.isNotEmpty ? _tags : null,
+        ),
+      );
+    }
   }
 
   void _clearForm() {

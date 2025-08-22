@@ -29,8 +29,12 @@ void main() async {
   // Initialize global error handling
   GlobalErrorHandler.initialize();
   
-  // Initialize error logger
-  await ErrorLogger().initialize();
+  // Initialize error logger (safe for all platforms)
+  try {
+    await ErrorLogger().initialize();
+  } catch (e) {
+    debugPrint('Error logger initialization failed: $e');
+  }
   
   // Initialize dependency injection
   await configureDependencies();
@@ -43,30 +47,30 @@ class CherryNoteApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FeedbackListener(
-      displayStyle: FeedbackDisplayStyle.toast,
-      child: MaterialApp.router(
-        title: 'Cherry Note',
-        theme: kIsWeb 
-          ? WebUIAdaptations.adaptThemeForWeb(AppTheme.lightTheme, context)
-          : AppTheme.lightTheme,
-        darkTheme: kIsWeb 
-          ? WebUIAdaptations.adaptThemeForWeb(AppTheme.darkTheme, context)
-          : AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: GetIt.instance<AppRouter>().router,
-        debugShowCheckedModeBanner: false,
-        scrollBehavior: kIsWeb 
-          ? WebUIAdaptations.getWebScrollBehavior()
-          : null,
-        builder: (context, child) {
-          return GlobalErrorListener(
+    return MaterialApp.router(
+      title: 'Cherry Note',
+      theme: kIsWeb 
+        ? WebUIAdaptations.adaptThemeForWeb(AppTheme.lightTheme, context)
+        : AppTheme.lightTheme,
+      darkTheme: kIsWeb 
+        ? WebUIAdaptations.adaptThemeForWeb(AppTheme.darkTheme, context)
+        : AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+      routerConfig: GetIt.instance<AppRouter>().router,
+      debugShowCheckedModeBanner: false,
+      scrollBehavior: kIsWeb 
+        ? WebUIAdaptations.getWebScrollBehavior()
+        : null,
+      builder: (context, child) {
+        return FeedbackListener(
+          displayStyle: FeedbackDisplayStyle.toast,
+          child: GlobalErrorListener(
             showSnackBars: true,
             showDialogs: true,
             child: child ?? const SizedBox.shrink(),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

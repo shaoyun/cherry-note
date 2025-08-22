@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import 'package:cherry_note/features/notes/domain/entities/note_file.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_bloc.dart';
+import 'package:cherry_note/features/notes/presentation/bloc/web_notes_bloc.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_event.dart';
 import 'package:cherry_note/features/notes/presentation/bloc/notes_state.dart';
 import 'package:cherry_note/shared/widgets/custom_input.dart';
@@ -83,8 +85,18 @@ class _NoteListWidgetState extends State<NoteListWidget> {
     super.dispose();
   }
 
+  /// Get the notes bloc from context (platform-aware)
+  dynamic _getNotesBloc(BuildContext context) {
+    if (kIsWeb) {
+      return context.read<WebNotesBloc>();
+    } else {
+      return context.read<NotesBloc>();
+    }
+  }
+
   void _loadNotes() {
-    context.read<NotesBloc>().add(LoadNotesEvent(
+    final bloc = _getNotesBloc(context);
+    bloc.add(LoadNotesEvent(
       folderPath: widget.folderPath,
       searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
       tags: widget.filterTags,
@@ -116,7 +128,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
       }
     });
     
-    context.read<NotesBloc>().add(SortNotesEvent(
+    final bloc = _getNotesBloc(context);
+    bloc.add(SortNotesEvent(
       sortBy: _currentSortBy,
       ascending: _sortAscending,
     ));
@@ -129,7 +142,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
   }
 
   void _onNoteSelected(NoteFile note) {
-    context.read<NotesBloc>().add(SelectNoteEvent(filePath: note.filePath));
+    final bloc = _getNotesBloc(context);
+    bloc.add(SelectNoteEvent(filePath: note.filePath));
     widget.onNoteSelected?.call(note);
   }
 
@@ -156,7 +170,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
             onPressed: () {
               Navigator.of(dialogContext).pop();
               // Use the original context that has access to the BLoC
-              context.read<NotesBloc>().add(DeleteNoteEvent(filePath: note.filePath));
+              final bloc = _getNotesBloc(context);
+              bloc.add(DeleteNoteEvent(filePath: note.filePath));
               widget.onNoteDelete?.call(note);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -188,35 +203,41 @@ class _NoteListWidgetState extends State<NoteListWidget> {
         
         // 笔记列表
         Expanded(
-          child: BlocBuilder<NotesBloc, NotesState>(
-            builder: (context, state) {
-              if (state is NotesLoading) {
-                return const Center(
-                  child: CustomCircularProgressIndicator(
-                    label: '加载笔记中...',
-                  ),
-                );
-              }
-              
-              if (state is NotesError) {
-                return _buildErrorWidget(state);
-              }
-              
-              if (state is NotesLoaded) {
-                return _buildNotesList(state);
-              }
-              
-              if (state is NotesSearchResults) {
-                return _buildSearchResults(state);
-              }
-              
-              return const Center(
-                child: Text('暂无笔记'),
-              );
-            },
-          ),
+          child: kIsWeb
+            ? BlocBuilder<WebNotesBloc, NotesState>(
+                builder: (context, state) => _buildNotesContent(context, state),
+              )
+            : BlocBuilder<NotesBloc, NotesState>(
+                builder: (context, state) => _buildNotesContent(context, state),
+              ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNotesContent(BuildContext context, NotesState state) {
+    if (state is NotesLoading) {
+      return const Center(
+        child: CustomCircularProgressIndicator(
+          label: '加载笔记中...',
+        ),
+      );
+    }
+    
+    if (state is NotesError) {
+      return _buildErrorWidget(state);
+    }
+    
+    if (state is NotesLoaded) {
+      return _buildNotesList(state);
+    }
+    
+    if (state is NotesSearchResults) {
+      return _buildSearchResults(state);
+    }
+    
+    return const Center(
+      child: Text('暂无笔记'),
     );
   }
 
@@ -288,7 +309,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
                   icon: Icons.refresh,
                   tooltip: '刷新',
                   onPressed: () {
-                    context.read<NotesBloc>().add(const RefreshNotesEvent());
+                    final bloc = _getNotesBloc(context);
+                    bloc.add(const RefreshNotesEvent());
                   },
                 ),
               ],
@@ -324,7 +346,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
             text: '重试',
             icon: Icons.refresh,
             onPressed: () {
-              context.read<NotesBloc>().add(const RefreshNotesEvent());
+              final bloc = _getNotesBloc(context);
+              bloc.add(const RefreshNotesEvent());
             },
           ),
         ],
@@ -339,7 +362,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<NotesBloc>().add(const RefreshNotesEvent());
+        final bloc = _getNotesBloc(context);
+        bloc.add(const RefreshNotesEvent());
       },
       child: _currentViewType == NoteListViewType.list
           ? _buildListView(state.notes, state.selectedNoteId)
@@ -368,7 +392,8 @@ class _NoteListWidgetState extends State<NoteListWidget> {
                 onPressed: () {
                   _searchController.clear();
                   _onSearchChanged('');
-                  context.read<NotesBloc>().add(const ClearSearchEvent());
+                  final bloc = _getNotesBloc(context);
+                  bloc.add(const ClearSearchEvent());
                 },
               ),
             ],

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'global_error_handler.dart';
@@ -16,10 +17,20 @@ class ErrorLogger {
 
   File? _logFile;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
+  bool _isWebPlatform = false;
 
   /// Initialize the error logger
   Future<void> initialize() async {
     try {
+      // Check if running on web platform
+      _isWebPlatform = kIsWeb;
+      
+      if (_isWebPlatform) {
+        // For web, we can't write to files, so just use console logging
+        debugPrint('Error logging initialized for web platform (console only)');
+        return;
+      }
+      
       final directory = await getApplicationDocumentsDirectory();
       _logFile = File('${directory.path}/$_logFileName');
       
@@ -32,7 +43,7 @@ class ErrorLogger {
       await _rotateLogFileIfNeeded();
     } catch (e) {
       // If we can't initialize logging, continue without it
-      print('Failed to initialize error logger: $e');
+      debugPrint('Failed to initialize error logger: $e');
     }
   }
 
@@ -42,10 +53,17 @@ class ErrorLogger {
     String? context,
     StackTrace? stackTrace,
   }) async {
+    final logEntry = _createLogEntry(error, context: context, stackTrace: stackTrace);
+    
+    if (_isWebPlatform) {
+      // For web, just log to console
+      debugPrint('ERROR LOG:\n$logEntry');
+      return;
+    }
+    
     if (_logFile == null) return;
 
     try {
-      final logEntry = _createLogEntry(error, context: context, stackTrace: stackTrace);
       await _logFile!.writeAsString(
         '$logEntry\n',
         mode: FileMode.append,
@@ -56,7 +74,7 @@ class ErrorLogger {
       await _rotateLogFileIfNeeded();
     } catch (e) {
       // If logging fails, don't throw - just continue
-      print('Failed to log error: $e');
+      debugPrint('Failed to log error: $e');
     }
   }
 
@@ -99,7 +117,7 @@ class ErrorLogger {
         await _rotateLogFile();
       }
     } catch (e) {
-      print('Failed to check log file size: $e');
+      debugPrint('Failed to check log file size: $e');
     }
   }
 
@@ -121,7 +139,7 @@ class ErrorLogger {
       // Clean up old backup files (keep only last 5)
       await _cleanupOldBackups(directory);
     } catch (e) {
-      print('Failed to rotate log file: $e');
+      debugPrint('Failed to rotate log file: $e');
     }
   }
 
@@ -144,7 +162,7 @@ class ErrorLogger {
         }
       }
     } catch (e) {
-      print('Failed to cleanup old backup files: $e');
+      debugPrint('Failed to cleanup old backup files: $e');
     }
   }
 
@@ -162,7 +180,7 @@ class ErrorLogger {
       final recentEntries = entries.reversed.take(maxEntries).toList();
       return recentEntries;
     } catch (e) {
-      print('Failed to read log file: $e');
+      debugPrint('Failed to read log file: $e');
       return [];
     }
   }
@@ -174,7 +192,7 @@ class ErrorLogger {
     try {
       await _logFile!.writeAsString('');
     } catch (e) {
-      print('Failed to clear logs: $e');
+      debugPrint('Failed to clear logs: $e');
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../domain/entities/tag.dart';
 import '../../domain/entities/tag_filter.dart';
@@ -13,6 +14,7 @@ import 'tags_event.dart';
 import 'tags_state.dart';
 
 /// 标签管理BLoC
+@injectable
 class TagsBloc extends Bloc<TagsEvent, TagsState> {
   final TagRepository _tagRepository;
   final GetAllTags _getAllTags;

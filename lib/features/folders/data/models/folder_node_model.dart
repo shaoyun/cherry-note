@@ -56,6 +56,40 @@ class FolderNodeModel extends FolderNode {
     return json.encode(metadata);
   }
 
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'folderPath': folderPath,
+      'name': name,
+      'created': AppDateUtils.toIsoString(created),
+      'updated': AppDateUtils.toIsoString(updated),
+      if (description != null) 'description': description,
+      if (color != null) 'color': color,
+      'subFolders': subFolders.map((folder) => 
+          folder is FolderNodeModel ? folder.toJson() : {}
+      ).toList(),
+      'notes': notes.map((note) => note is NoteFile ? (note as NoteFile).toJson() : {}).toList(),
+    };
+  }
+
+  /// Create from JSON
+  factory FolderNodeModel.fromJson(Map<String, dynamic> json) {
+    return FolderNodeModel(
+      folderPath: json['folderPath'] as String,
+      name: json['name'] as String,
+      created: AppDateUtils.parseIsoString(json['created'] as String) ?? DateTime.now(),
+      updated: AppDateUtils.parseIsoString(json['updated'] as String) ?? DateTime.now(),
+      description: json['description'] as String?,
+      color: json['color'] as String?,
+      subFolders: (json['subFolders'] as List?)
+          ?.map((subfolder) => FolderNodeModel.fromJson(subfolder as Map<String, dynamic>))
+          .toList() ?? [],
+      notes: (json['notes'] as List?)
+          ?.map((note) => NoteFile.fromJson(note as Map<String, dynamic>))
+          .toList() ?? [],
+    );
+  }
+
   /// Create from FolderNode entity
   factory FolderNodeModel.fromEntity(FolderNode entity) {
     return FolderNodeModel(

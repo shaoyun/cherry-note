@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
+import 'package:injectable/injectable.dart';
 
 import '../models/folder_node_model.dart';
 import 'folder_data_source.dart';
@@ -13,7 +14,7 @@ class LocalFolderDataSource implements FolderDataSource {
   final String _basePath;
 
   const LocalFolderDataSource({
-    required String basePath,
+    @Named('notesDirectory') required String basePath,
   }) : _basePath = basePath;
 
   @override

@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(find:*)",
+      "Bash(flutter packages pub run build_runner build --delete-conflicting-outputs)",
+      "Bash(flutter run:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter build web --no-pub)",
+      "Bash(flutter build web --no-pub --dart-define=WEB_RENDERER=html)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }

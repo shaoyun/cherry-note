@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../domain/entities/folder_node.dart';
 import '../../domain/repositories/folder_repository.dart';
@@ -7,6 +8,7 @@ import 'folders_event.dart';
 import 'folders_state.dart';
 
 /// 文件夹管理BLoC
+@injectable
 class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   final FolderRepository _folderRepository;
 

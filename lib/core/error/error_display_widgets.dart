@@ -341,11 +341,25 @@ class _GlobalErrorListenerState extends State<GlobalErrorListener> {
     if (!mounted) return;
 
     if (widget.showDialogs && error.severity.index >= ErrorSeverity.high.index) {
-      ErrorDialog.show(context, error);
+      // Check if Navigator is available before showing dialog
+      final navigator = Navigator.maybeOf(context);
+      if (navigator != null) {
+        ErrorDialog.show(context, error);
+      } else {
+        // Fallback to debug print if Navigator is not available
+        debugPrint('Error (Navigator not available): ${error.message}');
+      }
     } else if (widget.showSnackBars) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        ErrorSnackBar(error: error),
-      );
+      // Check if ScaffoldMessenger is available before showing snackbar
+      final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+      if (scaffoldMessenger != null) {
+        scaffoldMessenger.showSnackBar(
+          ErrorSnackBar(error: error),
+        );
+      } else {
+        // Fallback to debug print if ScaffoldMessenger is not available
+        debugPrint('Error (ScaffoldMessenger not available): ${error.message}');
+      }
     }
   }
 

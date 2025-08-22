@@ -1,7 +1,10 @@
+import 'package:injectable/injectable.dart';
+
 import '../entities/tag.dart';
 import '../repositories/tag_repository.dart';
 
 /// 搜索标签用例
+@injectable
 class SearchTags {
   final TagRepository _repository;
 

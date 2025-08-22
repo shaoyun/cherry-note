@@ -1,6 +1,9 @@
+import 'package:injectable/injectable.dart';
+
 import '../repositories/tag_repository.dart';
 
 /// 删除标签用例
+@injectable
 class DeleteTag {
   final TagRepository _repository;
 

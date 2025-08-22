@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:cherry_note/features/notes/domain/entities/note_file.dart';
@@ -12,6 +13,7 @@ import 'package:cherry_note/shared/utils/file_utils.dart';
 import 'package:cherry_note/core/error/exceptions.dart';
 
 /// 笔记管理BLoC
+@injectable
 class NotesBloc extends Bloc<NotesEvent, NotesState> {
   final String _notesDirectory;
   
@@ -24,7 +26,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
   bool _currentAscending = false;
 
   NotesBloc({
-    required String notesDirectory,
+    @Named('notesDirectory') required String notesDirectory,
   })  : _notesDirectory = notesDirectory,
         super(const NotesInitial()) {
     on<LoadNotesEvent>(_onLoadNotes);

@@ -1,6 +1,9 @@
+import 'package:injectable/injectable.dart';
+
 import '../repositories/tag_repository.dart';
 
 /// 获取标签自动补全建议用例
+@injectable
 class GetTagSuggestions {
   final TagRepository _repository;
 

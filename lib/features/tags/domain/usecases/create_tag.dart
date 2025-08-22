@@ -1,7 +1,10 @@
+import 'package:injectable/injectable.dart';
+
 import '../entities/tag.dart';
 import '../repositories/tag_repository.dart';
 
 /// 创建标签用例
+@injectable
 class CreateTag {
   final TagRepository _repository;
 

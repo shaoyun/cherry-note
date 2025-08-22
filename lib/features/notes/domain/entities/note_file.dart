@@ -186,6 +186,32 @@ class NoteFile extends Equatable {
     return buffer.toString();
   }
 
+  /// Convert NoteFile to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'filePath': filePath,
+      'title': title,
+      'content': content,
+      'tags': tags,
+      'created': created.toIso8601String(),
+      'updated': updated.toIso8601String(),
+      'isSticky': isSticky,
+    };
+  }
+
+  /// Create NoteFile from JSON
+  factory NoteFile.fromJson(Map<String, dynamic> json) {
+    return NoteFile(
+      filePath: json['filePath'] as String,
+      title: json['title'] as String,
+      content: json['content'] as String,
+      tags: List<String>.from(json['tags'] as List),
+      created: DateTime.parse(json['created'] as String),
+      updated: DateTime.parse(json['updated'] as String),
+      isSticky: json['isSticky'] as bool? ?? false,
+    );
+  }
+
   @override
   String toString() {
     return 'NoteFile(filePath: $filePath, title: $title, tags: $tags, isSticky: $isSticky)';

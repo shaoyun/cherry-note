@@ -1,9 +1,12 @@
+import 'package:injectable/injectable.dart';
+
 import '../../domain/entities/folder_node.dart';
 import '../../domain/repositories/folder_repository.dart';
 import '../datasources/folder_data_source.dart';
 import '../models/folder_node_model.dart';
 
 /// 文件夹仓储实现
+@LazySingleton(as: FolderRepository)
 class FolderRepositoryImpl implements FolderRepository {
   final FolderDataSource _dataSource;
 
