@@ -16,10 +16,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   @override
+  void initState() {
+    super.initState();
+    // Load settings when the page is initialized
+    context.read<SettingsBloc>().add(const LoadSettings());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.instance<SettingsBloc>()..add(const LoadSettings()),
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text('设置'),
           actions: [
@@ -132,7 +137,6 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
         ),
-      ),
     );
   }
 

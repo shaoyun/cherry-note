@@ -15,6 +15,7 @@ import '../../features/folders/presentation/bloc/folders_bloc.dart';
 import '../../features/notes/presentation/bloc/notes_bloc.dart';
 import '../../features/notes/presentation/bloc/web_notes_bloc.dart';
 import '../../features/tags/presentation/bloc/tags_bloc.dart';
+import '../../features/settings/presentation/bloc/settings_bloc.dart';
 
 @singleton
 class AppRouter {
@@ -60,7 +61,10 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.settings,
-          builder: (context, state) => const SettingsPage(),
+          builder: (context, state) => BlocProvider(
+            create: (context) => GetIt.instance<SettingsBloc>(),
+            child: const SettingsPage(),
+          ),
         ),
         GoRoute(
           path: '/about',
