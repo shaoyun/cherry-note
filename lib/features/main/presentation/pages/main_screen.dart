@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +12,9 @@ import '../../../notes/domain/entities/note_file.dart';
 import '../../../tags/domain/entities/tag_filter.dart';
 import '../../../folders/presentation/bloc/folders_bloc.dart';
 import '../../../notes/presentation/bloc/notes_bloc.dart';
-import '../../../tags/presentation/bloc/tags_bloc.dart';
+import '../../../notes/presentation/bloc/web_notes_bloc.dart';
 import '../../../notes/presentation/bloc/notes_event.dart';
+import '../../../notes/presentation/bloc/notes_state.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../widgets/app_menu_bar.dart';
@@ -206,14 +208,26 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     // 在当前选中的文件夹中创建新笔记
     final folderPath = _selectedFolderPath ?? '';
     
-    // TODO: 实现创建新笔记的逻辑
-    // 这里应该通过 BLoC 创建新笔记，然后自动选中并打开编辑器
+    // 生成默认标题（包含时间戳避免重名）
+    final now = DateTime.now();
+    final defaultTitle = '新笔记 ${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     
-    // 临时实现：直接打开编辑器
-    setState(() {
-      _selectedNote = null; // 表示新笔记
-    });
+    // 通过 BLoC 创建新笔记
+    if (kIsWeb) {
+      context.read<WebNotesBloc>().add(CreateNoteEvent(
+        title: defaultTitle,
+        folderPath: folderPath.isEmpty ? null : folderPath,
+        content: '# $defaultTitle\n\n开始写你的笔记...',
+      ));
+    } else {
+      context.read<NotesBloc>().add(CreateNoteEvent(
+        title: defaultTitle,
+        folderPath: folderPath.isEmpty ? null : folderPath,
+        content: '# $defaultTitle\n\n开始写你的笔记...',
+      ));
+    }
     
+    // 在紧凑模式下切换到编辑器页面
     if (_isCompactMode) {
       setState(() {
         _currentPageIndex = 2;
@@ -300,28 +314,55 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           // 判断是否为紧凑模式
           _isCompactMode = constraints.maxWidth < 1024;
           
-          return Scaffold(
-            appBar: _isCompactMode ? _buildCompactAppBar() : null,
-            body: Column(
-              children: [
-                // 桌面端菜单栏和工具栏
-                if (!_isCompactMode) ...[
-                  _buildMenuBar(),
-                  if (_showToolbar) _buildToolbar(),
-                ],
-                
-                // 主要内容区域
-                Expanded(
-                  child: _isCompactMode 
-                      ? _buildCompactLayout()
-                      : _buildDesktopLayout(),
+          return MultiBlocListener(
+            listeners: [
+              // 监听创建笔记成功事件
+              if (kIsWeb)
+                BlocListener<WebNotesBloc, NotesState>(
+                  listener: (context, state) {
+                    if (state is NoteOperationSuccess && state.operation == 'create') {
+                      // 自动选中新创建的笔记
+                      if (state.note != null) {
+                        _onNoteSelected(state.note!);
+                      }
+                    }
+                  },
+                )
+              else
+                BlocListener<NotesBloc, NotesState>(
+                  listener: (context, state) {
+                    if (state is NoteOperationSuccess && state.operation == 'create') {
+                      // 自动选中新创建的笔记
+                      if (state.note != null) {
+                        _onNoteSelected(state.note!);
+                      }
+                    }
+                  },
                 ),
-              ],
+            ],
+            child: Scaffold(
+              appBar: _isCompactMode ? _buildCompactAppBar() : null,
+              body: Column(
+                children: [
+                  // 桌面端菜单栏和工具栏
+                  if (!_isCompactMode) ...[
+                    _buildMenuBar(),
+                    if (_showToolbar) _buildToolbar(),
+                  ],
+                  
+                  // 主要内容区域
+                  Expanded(
+                    child: _isCompactMode 
+                        ? _buildCompactLayout()
+                        : _buildDesktopLayout(),
+                  ),
+                ],
+              ),
+              floatingActionButton: _buildFloatingActionButton(),
+              bottomNavigationBar: _isCompactMode 
+                  ? _buildBottomNavigationBar()
+                  : null,
             ),
-            floatingActionButton: _buildFloatingActionButton(),
-            bottomNavigationBar: _isCompactMode 
-                ? _buildBottomNavigationBar()
-                : null,
           );
         },
       ),
